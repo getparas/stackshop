@@ -22,6 +22,7 @@ import {
 import { createServerFn } from '@tanstack/react-start'
 import { Suspense } from 'react'
 import { mutateCartFn } from '../cart'
+import { useNotifications } from '@/lib/notifications'
 
 const fetchProductById = createServerFn({ method: 'POST' })
   .inputValidator((data: { id: string }) => data)
@@ -88,6 +89,7 @@ function RouteComponent() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { product, recommendedProducts } = Route.useLoaderData()
+  const notifications = useNotifications()
 
   return (
     <div>
@@ -153,7 +155,6 @@ function RouteComponent() {
                   <Button
                     className="bg-slate-900 px-4 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:bg-white dark:text-slate-900"
                     onClick={async (e) => {
-                      console.log('add to cart')
                       e.preventDefault()
                       e.stopPropagation()
                       await mutateCartFn({
@@ -167,6 +168,7 @@ function RouteComponent() {
                       await queryClient.invalidateQueries({
                         queryKey: ['cart-items-data'],
                       })
+                      notifications.addedToCart(product.name, 1)
                     }}
                   >
                     <HugeiconsIcon icon={ShoppingBag} size={16} />

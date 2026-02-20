@@ -7,6 +7,7 @@ import { HugeiconsIcon } from '@hugeicons/react'
 import { useQueryClient } from '@tanstack/react-query'
 import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
+import { useNotifications } from '@/lib/notifications'
 
 const fetchCartItems = createServerFn({ method: 'GET' }).handler(async () => {
   const { getCartItems } = await import('@/data/cart.server')
@@ -42,6 +43,7 @@ function CartPage() {
   const queryClient = useQueryClient()
   const router = useRouter()
   const cart = Route.useLoaderData()
+  const notifications = useNotifications()
 
   const shipping = cart.items.length > 0 ? 8 : 0
   const subtotal = cart.items.reduce(
@@ -62,22 +64,30 @@ function CartPage() {
     })
     await router.invalidate({ sync: true })
     await queryClient.invalidateQueries({ queryKey: ['cart-items-data'] })
+    notifications.cartCleared()
   }
 
   const handleDecrementQuantity = async (item: CartItem) => {
+    const newQuantity = Number(item.quantity) - 1
     await mutateCartFn({
       data: {
         action: 'update',
         productId: item.id,
-        quantity: Number(item.quantity) - 1,
+        quantity: newQuantity,
       },
     })
     await router.invalidate({ sync: true })
     await queryClient.invalidateQueries({
       queryKey: ['cart-items-data'],
     })
+    if (newQuantity > 0) {
+      notifications.quantityUpdated(item.name, newQuantity)
+    } else {
+      notifications.removedFromCart(item.name)
+    }
   }
   const handleIncrementQuantity = async (item: CartItem) => {
+    const newQuantity = Number(item.quantity) + 1
     await mutateCartFn({
       data: {
         action: 'add',
@@ -89,6 +99,7 @@ function CartPage() {
     await queryClient.invalidateQueries({
       queryKey: ['cart-items-data'],
     })
+    notifications.quantityUpdated(item.name, newQuantity)
   }
 
   const handleRemoveItem = async (item: CartItem) => {
@@ -103,6 +114,7 @@ function CartPage() {
     await queryClient.invalidateQueries({
       queryKey: ['cart-items-data'],
     })
+    notifications.removedFromCart(item.name)
   }
   return (
     <div className="mx-auto max-w-5xl gap-6 rounded-2xl border bg-white/80 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/80 lg:grid-cols-[2fr,1fr]">

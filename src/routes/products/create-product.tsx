@@ -27,6 +27,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { createServerFn } from '@tanstack/react-start'
 import { FieldError } from '@/components/ui/field-error'
+import { useNotifications } from '@/lib/notifications'
 
 export const Route = createFileRoute('/products/create-product')({
   component: RouteComponent,
@@ -78,6 +79,7 @@ const createProductServerFn = createServerFn({ method: 'POST' })
 function RouteComponent() {
   const navigate = useNavigate()
   const router = useRouter()
+  const notifications = useNotifications()
   const form = useForm({
     defaultValues: {
       name: '',
@@ -100,7 +102,7 @@ function RouteComponent() {
     },
     onSubmit: async ({ value }) => {
       try {
-        await createProductServerFn({
+        const product = await createProductServerFn({
           data: {
             name: value.name,
             description: value.description,
@@ -112,10 +114,14 @@ function RouteComponent() {
         })
 
         await router.invalidate({ sync: true })
-
+        notifications.productCreated(product.name)
         navigate({ to: '/products' })
       } catch (error) {
         console.error('Error creating product', error)
+        notifications.error(
+          'Failed to Create Product',
+          'There was an error creating your product. Please check your input and try again.',
+        )
       }
     },
   })

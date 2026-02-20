@@ -14,6 +14,7 @@ import { ShoppingBag } from '@hugeicons/core-free-icons'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ProductSelect } from '@/db/schema'
 import { mutateCartFn } from '@/routes/cart'
+import { useNotifications } from '@/lib/notifications'
 
 const inventoryTone = {
   'in-stock': 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -24,6 +25,7 @@ const inventoryTone = {
 export function ProductCard({ product }: { product: ProductSelect }) {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const notifications = useNotifications()
   return (
     <Link
       to="/products/$id"
@@ -69,7 +71,6 @@ export function ProductCard({ product }: { product: ProductSelect }) {
             variant={'secondary'}
             className={'bg-slate-900 text-white hover:bg-slate-800'}
             onClick={async (e) => {
-              console.log('add to cart')
               e.preventDefault()
               e.stopPropagation()
               await mutateCartFn({
@@ -83,6 +84,7 @@ export function ProductCard({ product }: { product: ProductSelect }) {
               await queryClient.invalidateQueries({
                 queryKey: ['cart-items-data'],
               })
+              notifications.addedToCart(product.name, 1)
             }}
           >
             <HugeiconsIcon icon={ShoppingBag} size={16} /> Add to Cart
